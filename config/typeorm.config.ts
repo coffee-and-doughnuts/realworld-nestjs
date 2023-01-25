@@ -3,8 +3,6 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm'
 // TODO: Seperate options per environments: product, env, test
 // options: {environment: TypeOrmModuleOptions} looks good.
 
-console.log(__dirname)
-
 const defaultOptions: TypeOrmModuleOptions = {
   type: 'postgres',
   host: 'localhost',
@@ -27,9 +25,11 @@ export default function(node_env: string): TypeOrmModuleOptions {
 
   if (node_env === "test") {
     return {
-      entities: ["**/*.entity.{ts,js}"],
+      entities: ["**/*.entity.{ts, js}"],
       synchronize: true,
-      ...defaultOptions,
+      type: 'sqlite',
+      database: ':memory:',
+      dropSchema: true,
     }
   }
 

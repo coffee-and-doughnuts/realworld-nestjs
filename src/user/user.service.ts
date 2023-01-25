@@ -1,10 +1,13 @@
 import { HttpStatus, HttpException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { JwtService } from '@nestjs/jwt'
+import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateDto, ResponseDto, LogInDto } from './user.dto';
-import * as argon2 from 'argon2'
+import { Result, Ok, Err } from '@sniptt/monads';
+
+type CreateUserError = 'UserNotFound' | 'EmailMustBeUnique';
+type LoginError = 'username not found';
 
 @Injectable()
 export class UserService {
@@ -14,48 +17,41 @@ export class UserService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async create(body: CreateDto): Promise<ResponseDto> {
-    const exist_user = await this.userRepository.find({where: {email: body.email}})
+  async create(dto: CreateDto): Promise<Result<ResponseDto, CreateUserError>> {
+    const exist_user = await this.userRepository.findOneBy({
+      email: dto.email,
+    });
 
-    if (exist_user.length != 0) {
-      const errors = {email: 'email must be unique'}
-      throw new HttpException({message: 'Input data validation failed', errors}, HttpStatus.CONFLICT)
+    if (exist_user) {
+      return Err('EmailMustBeUnique');
     }
 
-    const new_user = new User()
-    new_user.email = body.email;
-    new_user.username = body.username;
-    new_user.hashed_password = await argon2.hash(body.password);
+    const new_user = await dto.toUser();
 
     // TODO: validate user
-    const saved_user = await this.userRepository.save(new_user)
-    return this.responseUser(saved_user)
+    const saved_user = await this.userRepository.save(new_user);
+    const response = await this.signUser(saved_user) 
+    return Ok(response);
   }
 
-  async login(body: LogInDto): Promise<ResponseDto> {
-    const user = await this.userRepository.findOneBy({email: body.email})
+  async login(dto: LogInDto): Promise<Result<ResponseDto, LoginError>> {
+    const exist_user = await this.userRepository.findOneBy({
+      email: dto.email,
+    });
 
-    if (!user) {
-      throw new HttpException({message: 'Wrong email and password'}, HttpStatus.UNAUTHORIZED)
+    if (!exist_user) {
+      return Err('username not found');
     }
 
-    return this.responseUser(user)
+    const response = await this.signUser(exist_user)
+    return Ok(response);
   }
 
-  private async responseUser(user: User): Promise<ResponseDto> {
+  private async signUser(user: User): Promise<ResponseDto> {
     const token = await this.jwtService.signAsync({
-      email: user.email,
-      username: user.username,
+      email: user.email
     })
 
-    const response: ResponseDto = {
-      username: user.username,
-      email: user.email,
-      bio: user.bio,
-      image: user.image,
-      token,
-    }
-
-    return response
+    return ResponseDto.fromUser(user, token)
   }
 }

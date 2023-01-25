@@ -10,7 +10,8 @@ import TypeOrmConfig from '../config/typeorm.config';
   imports: [
     TypeOrmModule.forRoot(TypeOrmConfig(process.env.NODE_ENV)),
     UserModule,
-    ArticleModule],
+    ArticleModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -28,7 +28,7 @@ export class User {
   username: string;
 
   @Column()
-  hashed_password: string;
+  hashedPassword: string;
 
   @CreateDateColumn()
   createdAt: Date;
