@@ -1,5 +1,5 @@
-import { HttpException, HttpStatus, ValidationPipe } from "@nestjs/common";
-import { ValidationError } from "class-validator";
+import { HttpException, HttpStatus, ValidationPipe } from '@nestjs/common';
+import { ValidationError } from 'class-validator';
 
 // Validate given body, params, query and transform into Dto
 // Return HttpException with BadRequest when validation failed.
@@ -12,11 +12,11 @@ import { ValidationError } from "class-validator";
 export class ValidatorPipe extends ValidationPipe {
   public createExceptionFactory() {
     return (validationErrors: ValidationError[]) => {
-      let errors = {}
+      let errors = {};
       for (const validError of validationErrors) {
-        errors[validError.property] = Object.values(validError.constraints)
+        errors[validError.property] = Object.values(validError.constraints);
       }
-      return new HttpException({ errors }, HttpStatus.BAD_REQUEST)
-    }
+      return new HttpException({ errors }, HttpStatus.UNPROCESSABLE_ENTITY);
+    };
   }
 }

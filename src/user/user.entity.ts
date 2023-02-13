@@ -45,4 +45,22 @@ export class User {
 
   @ManyToMany(() => User)
   followed_by: User[];
+
+  static build({
+    email,
+    username,
+    hashedPassword,
+  }: {
+    email: string;
+    username: string;
+    hashedPassword: string;
+  }) {
+    const user = new User();
+
+    user.email = email.toLocaleLowerCase();
+    user.username = username.toLocaleLowerCase();
+    user.hashedPassword = hashedPassword;
+
+    return user;
+  }
 }
